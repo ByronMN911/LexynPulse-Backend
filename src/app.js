@@ -25,7 +25,7 @@ const preguntaRoutes = require('./routes/preguntaRoutes');
  */
 // Reemplaza app.use(cors()); con esto:
 app.use(cors({
-    origin: ['https://lexyn-pulse-frontend-nrhfcal1r-byronmn911s-projects.vercel.app', 'http://localhost:4200'],
+    origin: '*', 
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
