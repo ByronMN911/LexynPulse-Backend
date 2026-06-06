@@ -1,51 +1,37 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-/*
- * Pool de conexiones PostgreSQL.
- * Se utiliza un pool para reutilizar conexiones y evitar crear
- * una nueva conexión por cada petición, mejorando el rendimiento
- * y el manejo concurrente de solicitudes.
- */
-const pool = new Pool({
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    database: process.env.DB_NAME,
-});
+// 1. Validamos que la variable exista realmente
+if (!process.env.DATABASE_URL) {
+    console.error("ERROR CRÍTICO: No se encontró DATABASE_URL en el archivo .env");
+    process.exit(1); // Detiene el servidor si no hay base de datos
+}
+
+// 2. Limpiamos cualquier rastro de sslmode en la URL por si acaso quedó alguno
+const dbUrlLimpia = process.env.DATABASE_URL.replace('?sslmode=require', '');
 
 /*
- * Verificación inicial de conectividad.
- * Ejecuta una consulta simple al iniciar la aplicación para detectar
- * errores de configuración o disponibilidad de la base de datos.
+ * Pool de conexiones PostgreSQL configurado para Cloud Deployment.
  */
-pool.query('SELECT NOW()', (err, res) => {
-    if (err) {
-        console.error(
-            'Error crítico al conectar a PostgreSQL:',
-            err.stack
-        );
-    } else {
-        console.log(
-            'Conexión a PostgreSQL establecida:',
-            res.rows[0].now
-        );
+const pool = new Pool({
+    connectionString: dbUrlLimpia,
+    ssl: {
+        rejectUnauthorized: false // Fundamental para conectarse a Neon o Render
     }
 });
 
 /*
- * Se expone una interfaz mínima para desacoplar el acceso a BD.
- * Esto facilita cambios futuros en la implementación o pruebas.
+ * Verificación inicial de conectividad.
  */
+pool.query('SELECT NOW()', (err, res) => {
+    if (err) {
+        console.error('Error crítico al conectar a PostgreSQL en la nube:', err.stack);
+    } else {
+        console.log('Conexión a PostgreSQL (Neon.tech) establecida con éxito:', res.rows[0].now);
+    }
+});
+
 module.exports = {
-
-    // Wrapper centralizado para consultas SQL
     query: (text, params) => pool.query(text, params),
-
-    /*
-     * Se exporta el pool para operaciones avanzadas
-     * como transacciones o gestión manual de conexiones.
-     */
     pool
 };
