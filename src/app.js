@@ -23,9 +23,11 @@ const preguntaRoutes = require('./routes/preguntaRoutes');
  * Se centralizan aquí las configuraciones transversales
  * aplicadas a todas las solicitudes entrantes.
  */
-// Reemplaza app.use(cors()); con esto:
 app.use(cors({
-    origin: '*', 
+    origin: [
+        'https://lexyn-pulse-frontend.vercel.app', 
+        'http://localhost:4200'                   
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
