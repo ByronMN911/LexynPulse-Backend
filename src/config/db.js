@@ -1,33 +1,32 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-// 1. Validamos que la variable exista realmente
-if (!process.env.DATABASE_URL) {
+const rawUrl = process.env.DATABASE_URL;
+
+if (!rawUrl) {
     console.error("ERROR CRÍTICO: No se encontró DATABASE_URL en el archivo .env");
-    process.exit(1); // Detiene el servidor si no hay base de datos
+    process.exit(1);
 }
 
-// 2. Limpiamos cualquier rastro de sslmode en la URL por si acaso quedó alguno
-const dbUrlLimpia = process.env.DATABASE_URL.replace('?sslmode=require', '');
+// LIMPIEZA TOTAL: Nos quedamos solo con la parte izquierda de la URL (sin parámetros)
+const dbUrlLimpia = rawUrl.split('?')[0];
 
-/*
- * Pool de conexiones PostgreSQL configurado para Cloud Deployment.
- */
+// DETECCIÓN INTELIGENTE
+const isLocal = dbUrlLimpia.includes('localhost');
+
+console.log(`Intentando conectar a: ${dbUrlLimpia} (Modo: ${isLocal ? 'LOCAL' : 'NUBE'})`);
+
 const pool = new Pool({
     connectionString: dbUrlLimpia,
-    ssl: {
-        rejectUnauthorized: false // Fundamental para conectarse a Neon o Render
-    }
+    // Si es local, no usamos SSL (false). Si es nube, usamos {rejectUnauthorized: false}
+    ssl: isLocal ? false : { rejectUnauthorized: false }
 });
 
-/*
- * Verificación inicial de conectividad.
- */
 pool.query('SELECT NOW()', (err, res) => {
     if (err) {
-        console.error('Error crítico al conectar a PostgreSQL en la nube:', err.stack);
+        console.error('Error al conectar a la DB:', err.stack);
     } else {
-        console.log('Conexión a PostgreSQL (Neon.tech) establecida con éxito:', res.rows[0].now);
+        console.log('¡Conexión establecida correctamente!');
     }
 });
 
