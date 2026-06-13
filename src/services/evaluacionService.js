@@ -1,6 +1,8 @@
+const crypto = require('crypto');
 const db = require('../config/db');
 const evaluacionModel = require('../models/evaluacionModel');
 const geminiService = require('./geminiService');
+
 
 // Precios base por tamaño de empresa — punto de partida antes de multiplicadores
 const TARIFAS_BASE = {
@@ -173,6 +175,9 @@ const calcularYGuardarEvaluacion = async (usuarioId, respuestasUsuario) => {
         nombreEmpresa, sector, tamano, top3Riesgos
     );
 
+    // Generamos un hash único combinando un prefijo, un string aleatorio y la fecha
+    const codigoGenerado = 'LXP-' + crypto.randomBytes(4).toString('hex').toUpperCase() + '-' + Date.now().toString().slice(-6);
+
     const cabeceraEvaluacion = {
         usuario_id: usuarioId,
         empresa_tamano_momento: tamano,
@@ -188,7 +193,8 @@ const calcularYGuardarEvaluacion = async (usuarioId, respuestasUsuario) => {
         descuento_sugerido_momento: descuentoSugerido,
         precio_pulse_con_impuesto: precioPulseConImpuesto,
         precio_sentinel_con_urgencia_impuesto: precioSentinelConUrgencia,
-        analisis_orientacion_ia: informeIA
+        analisis_orientacion_ia: informeIA,
+        codigo_verificacion: codigoGenerado
     };
 
     // Transacción atómica: si falla cualquier inserción, se revierten todos los cambios
@@ -241,10 +247,18 @@ const obtenerTelemetriaGlobalAdmin = async () => {
     return await evaluacionModel.obtenerTodasEvaluacionesDashboard();
 };
 
+/*
+ * Servicio para verificar la autenticidad de un reporte PDF.
+ */
+const validarReporteCriptografico = async (codigo) => {
+    return await evaluacionModel.verificarCodigoSeguridad(codigo);
+};
+
 module.exports = {
     estructurarCuestionario,
     calcularYGuardarEvaluacion,
     obtenerHistorialCliente,
     obtenerReporteDetallado,
-    obtenerTelemetriaGlobalAdmin
+    obtenerTelemetriaGlobalAdmin,
+    validarReporteCriptografico
 };

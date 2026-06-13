@@ -17,6 +17,7 @@ const obtenerCuestionario = async (req, res) => {
  */
 const procesarEvaluacion = async (req, res) => {
     try {
+        
         const usuarioId = req.user.id; 
         const { respuestas } = req.body;
 
@@ -77,10 +78,42 @@ const obtenerDashboardGlobal = async (req, res) => {
     }
 };
 
+/*
+ * Endpoint público para la validación de reportes PDF.
+ * Permite a auditores externos verificar la integridad del documento.
+ */
+const verificarReporte = async (req, res) => {
+    try {
+        const { codigo } = req.params;
+        
+        // El controlador llama al servicio, ¡jamás a la base de datos!
+        const documentoValido = await evaluacionService.validarReporteCriptografico(codigo);
+
+        if (!documentoValido) {
+            return res.status(404).json({ 
+                valido: false, 
+                mensaje: 'Código de verificación inválido o documento alterado.' 
+            });
+        }
+
+        return res.status(200).json({
+            valido: true,
+            mensaje: 'Documento original y verificado por Lexyn Pulse.',
+            datos: documentoValido
+        });
+
+    } catch (error) {
+        console.error('Error crítico al verificar documento:', error);
+        return res.status(500).json({ message: 'Error interno del servidor al verificar código.' });
+    }
+};
+
+
 module.exports = {
     obtenerCuestionario,
     procesarEvaluacion,
     listarHistorial,
     obtenerReporte,
-    obtenerDashboardGlobal
+    obtenerDashboardGlobal,
+    verificarReporte 
 };

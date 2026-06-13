@@ -29,9 +29,9 @@ const insertarCabecera = async (client, data) => {
             score_base, multiplicador_contexto, score_final, nivel_riesgo,
             producto_recomendado, precio_pulse, precio_sentinel, precio_care_mensual,
             descuento_sugerido_momento, precio_pulse_con_impuesto, 
-            precio_sentinel_con_urgencia_impuesto, analisis_orientacion_ia
+            precio_sentinel_con_urgencia_impuesto, analisis_orientacion_ia, codigo_verificacion
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         RETURNING id, score_final, nivel_riesgo, producto_recomendado, creado_en
     `;
     
@@ -40,7 +40,8 @@ const insertarCabecera = async (client, data) => {
         data.score_base, data.multiplicador_contexto, data.score_final, data.nivel_riesgo,
         data.producto_recomendado, data.precio_pulse, data.precio_sentinel, data.precio_care_mensual,
         data.descuento_sugerido_momento, data.precio_pulse_con_impuesto, 
-        data.precio_sentinel_con_urgencia_impuesto, data.analisis_orientacion_ia
+        data.precio_sentinel_con_urgencia_impuesto, data.analisis_orientacion_ia,
+        data.codigo_verificacion 
     ];
 
     const { rows } = await client.query(queryText, values);
@@ -131,6 +132,21 @@ const obtenerTodasEvaluacionesDashboard = async () => {
     return rows;
 };
 
+/*
+ * Valida la existencia de un reporte usando su hash criptográfico.
+ */
+const verificarCodigoSeguridad = async (codigo) => {
+    const queryText = `
+        SELECT e.id, e.creado_en AS fecha_evaluacion, e.nivel_riesgo, u.empresa_nombre, u.correo 
+        FROM evaluaciones e
+        JOIN usuarios u ON e.usuario_id = u.id
+        WHERE e.codigo_verificacion = $1
+    `;
+    const { rows } = await db.query(queryText, [codigo]);
+    return rows[0]; // Retorna el registro si existe, o undefined si es falso
+};
+
+
 module.exports = {
     obtenerCuestionarioCompleto,
     insertarCabecera,
@@ -138,5 +154,6 @@ module.exports = {
     obtenerHistorialPorUsuario,
     obtenerEvaluacionPorId,
     obtenerDetallesPorEvaluacionId,
-    obtenerTodasEvaluacionesDashboard
+    obtenerTodasEvaluacionesDashboard,
+    verificarCodigoSeguridad
 };

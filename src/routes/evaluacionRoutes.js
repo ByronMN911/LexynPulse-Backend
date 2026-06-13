@@ -18,4 +18,8 @@ router.get('/reporte/:id', verificarToken, permitirRoles('CLIENTE', 'ADMINISTRAD
  * Ruta Maestra de Telemetría Global (Alcance exclusivo para el dashboard del Administrador).
  */
 router.get('/dashboard', verificarToken, permitirRoles('ADMINISTRADOR'), evaluacionController.obtenerDashboardGlobal); 
+
+// Ruta para validar el código de verificación de un reporte de evaluación
+router.get('/verificar/:codigo', evaluacionController.verificarReporte);
 module.exports = router;
+
